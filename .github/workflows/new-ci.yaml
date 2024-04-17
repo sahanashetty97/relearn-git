@@ -1,0 +1,59 @@
+name: Docker Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Build Docker image
+      - name: Build Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false  # We'll push the image after tagging
+          tags: latest
+          builder: docker
+
+  push:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Push Docker image to registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker tag latest ${{ secrets.REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
+          docker push ${{ secrets.REGISTRY }}/${{ secrets.IMAGE_NAME }}:latest
+
+  release:
+    needs: push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: latest
+          release_name: Release ${{ github.ref }}
+          body: |
+            This is the release associated with tag ${{ github.ref }}.
+          draft: false
+          prerelease: false
+
