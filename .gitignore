@@ -1,10 +1,7 @@
-# Ignore virtual environment directories
-venv/
-.venv/
+*.pyc
 
-# Ignore cache files
+env/
+
 __pycache__/
 
-# Ignore editor-specific files
-.vscode/
 .idea/
